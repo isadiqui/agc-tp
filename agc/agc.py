@@ -184,20 +184,26 @@ def write_OTU(OTU_list: List, output_file: Path) -> None:
     :param OTU_list: (list) A list of OTU sequences
     :param output_file: (Path) Path to the output file
     """
-    pass
+    with open(output_file, "w", encoding="utf-8") as handle:
+        for idx, (seq, count) in enumerate(OTU_list, start=1):
+            handle.write(f">OTU_{idx} occurrence:{count}\n")
+            handle.write(textwrap.fill(seq, width=80) + "\n")
 
 
 #==============================================================
 # Main program
 #==============================================================
-def main(): # pragma: no cover
-    """
-    Main program function
-    """
-    # Get arguments
+def main():  # pragma: no cover
+    """Main program function."""
     args = get_arguments()
-    # Votre programme ici
-
+    otus = abundance_greedy_clustering(
+        args.amplicon_file,
+        args.minseqlen,
+        args.mincount,
+        chunk_size=100,
+        kmer_size=8,
+    )
+    write_OTU(otus, args.output_file)
 
 
 if __name__ == '__main__':
