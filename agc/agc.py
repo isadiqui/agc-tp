@@ -26,13 +26,13 @@ from typing import Iterator, Dict, List
 # ftp://ftp.ncbi.nih.gov/blast/matrices/
 import nwalign3 as nw
 
-__author__ = "Your Name"
+__author__ = "Imane SADIQUI"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["Imane SADIQUI"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "Imane SADIQUI"
+__email__ = "imane.sadiqui@etu.u-paris.fr"
 __status__ = "Developpement"
 
 
@@ -76,6 +76,7 @@ def get_arguments(): # pragma: no cover
     return parser.parse_args()
 
 
+
 def read_fasta(amplicon_file: Path, minseqlen: int) -> Iterator[str]:
     """Read a compressed fasta and extract all fasta sequences.
 
@@ -83,7 +84,24 @@ def read_fasta(amplicon_file: Path, minseqlen: int) -> Iterator[str]:
     :param minseqlen: (int) Minimum amplicon sequence length
     :return: A generator object that provides the Fasta sequences (str).
     """
-    pass
+    current_seq = []
+    with gzip.open(amplicon_file, "rt") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith(">"):
+                if current_seq:
+                    seq = "".join(current_seq)
+                    if len(seq) >= minseqlen:
+                        yield seq
+                    current_seq = []
+            else:
+                current_seq.append(line)
+        if current_seq:
+            seq = "".join(current_seq)
+            if len(seq) >= minseqlen:
+                yield seq
 
 
 def dereplication_fulllength(amplicon_file: Path, minseqlen: int, mincount: int) -> Iterator[List]:
