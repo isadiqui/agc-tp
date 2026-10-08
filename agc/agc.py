@@ -24,6 +24,9 @@ from collections import Counter
 from typing import Iterator, Dict, List
 # https://github.com/briney/nwalign3
 # ftp://ftp.ncbi.nih.gov/blast/matrices/
+import numpy as np
+if not hasattr(np, "int"):
+    np.int = int  
 import nwalign3 as nw
 
 __author__ = "Imane SADIQUI"
@@ -127,7 +130,15 @@ def get_identity(alignment_list: List[str]) -> float:
     matches = sum(1 for a, b in zip(seq1, seq2) if a == b)
     return (matches / len(seq1)) * 100.0
 
-def abundance_greedy_clustering(amplicon_file: Path, minseqlen: int, mincount: int, chunk_size: int, kmer_size: int) -> List:
+
+
+def abundance_greedy_clustering(
+    amplicon_file: Path,
+    minseqlen: int,
+    mincount: int,
+    chunk_size: int,
+    kmer_size: int,
+) -> List:
     """Compute an abundance greedy clustering regarding sequence count and identity.
     Identify OTU sequences.
 
@@ -138,7 +149,33 @@ def abundance_greedy_clustering(amplicon_file: Path, minseqlen: int, mincount: i
     :param kmer_size: (int) A fournir mais non utilise cette annee
     :return: (list) A list of all the [OTU (str), count (int)] .
     """
-    pass
+    del chunk_size, kmer_size  # Non utilises cette annee
+    matrix_path = str(Path(__file__).parent / "MATCH")
+    otu_list = []
+
+    for seq, count in dereplication_fulllength(amplicon_file, minseqlen, mincount):
+        if not otu_list:
+            otu_list.append([seq, count])
+            continue
+
+        is_new_otu = True
+        for otu_seq, _ in otu_list:
+            alignment = nw.global_align(
+                seq,
+                otu_seq,
+                matrix=matrix_path,
+                gap_open=-1,
+                gap_extend=-1,
+            )
+            identity = get_identity(alignment)
+            if identity > 97.0:
+                is_new_otu = False
+                break
+
+        if is_new_otu:
+            otu_list.append([seq, count])
+
+    return otu_list
 
 
 def write_OTU(OTU_list: List, output_file: Path) -> None:
